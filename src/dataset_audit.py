@@ -4,9 +4,9 @@ from collections import Counter
 import csv
 import mne
 
-DATA_DIR = Path("BCICIV_2a_gdf")
-OUTPUT_DIR = Path("data")
-OUTPUT_DIR.mkdir(exist_ok=True)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = PROJECT_ROOT / "data" / "raw" / "BCICIV_2a_gdf"
+OUTPUT_DIR = PROJECT_ROOT / "data"
 
 if not DATA_DIR.exists():
     raise FileNotFoundError(
