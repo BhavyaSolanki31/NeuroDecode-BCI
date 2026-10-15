@@ -37,7 +37,7 @@ We will also investigate performance on unseen subjects rather than relying only
 
 ## Current Status
 
-We have set up the Python development environment and installed the initial libraries. Dataset selection, EEG preprocessing, model development, and experimental evaluation are the next stages.
+The dataset has been downloaded and organized, and the EEG files have been inspected using MNE-Python. Dataset auditing and label verification scripts have been implemented and executed successfully. The audit covers 18 GDF files, and the four motor imagery classes—left hand, right hand, feet, and tongue—have been verified. A dataset summary has been saved to `data/dataset_audit.csv`. The current focus is preparing the EEG signals for preprocessing, baseline model development, and model comparison.
 
 ## Research Approach
 
