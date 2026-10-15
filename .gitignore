@@ -6,3 +6,8 @@ data/
 models/*.keras
 models/*.h5
 results/
+
+# Raw EEG dataset - do not upload
+/BCICIV_2a_gdf/
+*.gdf
+.DS_Store
