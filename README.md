@@ -41,6 +41,7 @@ The repository source files are visible in VS Code and the Git command-not-found
 after installing Git. The data folder and expected EEG data outputs were not found in the project during the latest checks.
 Therefore, the next immediate task is to read the project instructions and locate the data before running preprocessing.
 EEGNet development and model comparison remain planned work, not completed results.
+The EEG dataset is still to be located and verified locally before running the preprocessing pipeline. After confirming the dataset and preprocessing outputs, the planned next development stage is to implement the EEGNet deep-learning model and compare its performance with the existing CSP-LDA baseline.
 
 ## Research Approach
 
