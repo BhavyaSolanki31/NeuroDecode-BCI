@@ -37,11 +37,7 @@ We will also investigate performance on unseen subjects rather than relying only
 
 ## Current Status
 
-The repository source files are visible in VS Code and the Git command-not-found issue appears to have been resolved
-after installing Git. The data folder and expected EEG data outputs were not found in the project during the latest checks.
-Therefore, the next immediate task is to read the project instructions and locate the data before running preprocessing.
-EEGNet development and model comparison remain planned work, not completed results.
-The EEG dataset is still to be located and verified locally before running the preprocessing pipeline. After confirming the dataset and preprocessing outputs, the planned next development stage is to implement the EEGNet deep-learning model and compare its performance with the existing CSP-LDA baseline.
+The dataset has been downloaded and organized, and the EEG files have been inspected using MNE-Python. Dataset auditing and label verification scripts have been implemented and executed successfully. The audit covers 18 GDF files, and the four motor imagery classes—left hand, right hand, feet, and tongue—have been verified. A dataset summary has been saved to `data/dataset_audit.csv`. The current focus is preparing the EEG signals for preprocessing, baseline model development, and model comparison.
 
 ## Research Approach
 
