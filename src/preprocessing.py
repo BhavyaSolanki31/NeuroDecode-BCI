@@ -1,16 +1,20 @@
 
 from pathlib import Path
 import re
-import numpy as np
+
 import mne
+import numpy as np
+
 
 # Project paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "raw" / "BCICIV_2a_gdf"
 OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
+
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Four motor-imagery classes
+
+# Motor-imagery class labels used by the ML models
 CLASS_CODES = {
     "769": 0,  # Left hand
     "770": 1,  # Right hand
@@ -18,20 +22,36 @@ CLASS_CODES = {
     "772": 3,  # Tongue
 }
 
-CLASS_NAMES = ["left_hand", "right_hand", "feet", "tongue"]
+CLASS_NAMES = [
+    "left_hand",
+    "right_hand",
+    "feet",
+    "tongue",
+]
+
+# Non-zero event IDs for MNE
+MNE_EVENT_ID = {
+    "769": 1,  # Left hand
+    "770": 2,  # Right hand
+    "771": 3,  # Feet
+    "772": 4,  # Tongue
+}
 
 
 def preprocess_recording(path):
     """Filter a training recording and extract labelled EEG epochs."""
 
     raw = mne.io.read_raw_gdf(
-        path, preload=True, verbose="ERROR"
+        path,
+        preload=True,
+        verbose="ERROR",
     )
 
     try:
-        # Correct the EOG channel types, as verified in the audit
+        # Correct EOG channel types
         eog_channels = [
-            name for name in raw.ch_names
+            name
+            for name in raw.ch_names
             if name.upper().startswith("EOG-")
         ]
 
@@ -53,6 +73,9 @@ def preprocess_recording(path):
                 f"Expected 22 EEG channels, found {len(raw.ch_names)}"
             )
 
+        # Save the actual selected EEG channel names
+        eeg_channels = list(raw.ch_names)
+
         # Band-pass filter: 8–30 Hz
         raw.filter(
             l_freq=8.0,
@@ -60,17 +83,12 @@ def preprocess_recording(path):
             verbose="ERROR",
         )
 
-        # Convert verified motor-imagery annotations to events
-        events, event_id = mne.events_from_annotations(
+        # Extract motor-imagery events using non-zero MNE IDs
+        events, _ = mne.events_from_annotations(
             raw,
-            event_id={
-                "769": 0,
-                "770": 1,
-                "771": 2,
-                "772": 3,
-            },
+            event_id=MNE_EVENT_ID,
             verbose="ERROR",
-        ) 
+        )
 
         if len(events) == 0:
             raise ValueError("No motor-imagery events found.")
@@ -79,7 +97,7 @@ def preprocess_recording(path):
         epochs = mne.Epochs(
             raw,
             events,
-            event_id=CLASS_CODES,
+            event_id=MNE_EVENT_ID,
             tmin=0.0,
             tmax=4.0,
             baseline=None,
@@ -89,10 +107,22 @@ def preprocess_recording(path):
             verbose="ERROR",
         )
 
+        # EEG data: trials x channels x time samples
         X = epochs.get_data().astype(np.float32)
-        y = epochs.events[:, -1].astype(np.int64)
 
-        return X, y
+        # Convert MNE IDs 1–4 to ML labels 0–3
+        y = (epochs.events[:, -1] - 1).astype(np.int64)
+
+        if len(X) != len(y):
+            raise ValueError("EEG trial and label counts do not match.")
+
+        if len(y) == 0:
+            raise ValueError("No valid epochs remain after preprocessing.")
+
+        if not np.isin(y, [0, 1, 2, 3]).all():
+            raise ValueError(f"Unexpected class labels: {np.unique(y)}")
+
+        return X, y, eeg_channels
 
     finally:
         raw.close()
@@ -115,17 +145,18 @@ def main():
     for path in files:
         print(f"\nProcessing {path.name}...")
 
-        X, y = preprocess_recording(path)
+        X, y, eeg_channels = preprocess_recording(path)
 
         # Extract participant ID, e.g. A01 from A01T.gdf
-        match = re.match(r"(A\d{2})T\.gdf$", path.name)
+        match = re.fullmatch(r"(A\d{2})T\.gdf", path.name)
 
         if match is None:
             raise ValueError(f"Unexpected filename: {path.name}")
 
         participant = match.group(1)
-
         output_path = OUTPUT_DIR / f"{participant}_epochs.npz"
+
+        class_counts = np.bincount(y, minlength=4)
 
         np.savez_compressed(
             output_path,
@@ -134,15 +165,11 @@ def main():
             class_names=np.array(CLASS_NAMES),
             participant=participant,
             sampling_rate=np.array(250.0),
-            eeg_channels=np.array(
-                mne.io.read_raw_gdf(
-                    path, preload=False, verbose="ERROR"
-                ).ch_names[:22]
-            ),
+            eeg_channels=np.array(eeg_channels),
         )
 
         print(f"  Epoch shape: {X.shape}")
-        print(f"  Trials per class: {np.bincount(y, minlength=4)}")
+        print(f"  Trials per class: {class_counts}")
         print(f"  Saved: {output_path}")
 
     print("\nPreprocessing completed.")

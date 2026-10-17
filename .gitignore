@@ -19,3 +19,10 @@ results/
 
 # macOS metadata
 .DS_Store
+
+# PyTorch model checkpoints
+*.pt
+*.pth
+
+# Experiment outputs
+results/
