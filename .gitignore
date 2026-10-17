@@ -26,3 +26,6 @@ results/
 
 # Experiment outputs
 results/
+
+# Broadband EEG preprocessing output
+data/processed_broadband/
